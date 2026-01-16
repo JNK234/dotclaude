@@ -19,6 +19,13 @@ fi
 echo "Installing Claude Code Configuration..."
 echo "========================================"
 
+# Ask for notification name
+echo ""
+read -p "Enter your name for voice notifications (default: Master Wayne): " USER_NAME
+USER_NAME="${USER_NAME:-Master Wayne}"
+echo "Voice notifications will address you as: $USER_NAME"
+echo ""
+
 # Create directories
 echo "Creating directory structure..."
 mkdir -p "$CLAUDE_DIR"/{hooks/{pre_tool_use,post_tool_use,notification},commands,agents,profiles,scripts}
@@ -44,6 +51,15 @@ echo "Installing hooks..."
 cp "$SCRIPT_DIR/hooks/pre_tool_use/"*.py "$CLAUDE_DIR/hooks/pre_tool_use/" 2>/dev/null || true
 cp "$SCRIPT_DIR/hooks/post_tool_use/"*.py "$CLAUDE_DIR/hooks/post_tool_use/" 2>/dev/null || true
 cp "$SCRIPT_DIR/hooks/notification/"*.py "$CLAUDE_DIR/hooks/notification/" 2>/dev/null || true
+
+# Customize voice notification with user's name
+if [ -f "$CLAUDE_DIR/hooks/notification/voice_notify.py" ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/Master Wayne/$USER_NAME/g" "$CLAUDE_DIR/hooks/notification/voice_notify.py"
+    else
+        sed -i "s/Master Wayne/$USER_NAME/g" "$CLAUDE_DIR/hooks/notification/voice_notify.py"
+    fi
+fi
 
 # Make hooks executable
 chmod +x "$CLAUDE_DIR/hooks/"*/*.py 2>/dev/null || true

@@ -53,66 +53,11 @@
           }
         ]
       }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "startup|resume|clear",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python ~/.claude/hooks/session/session_start.py"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "manual|auto",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python ~/.claude/hooks/session/pre_compact.py"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python ~/.claude/hooks/session/conversation_log.py"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/user-prompt-submit.sh"
-          }
-        ]
-      }
     ]
   },
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-script.sh"
   },
-  "enabledPlugins": {
-    "taskmaster@taskmaster": true,
-    "document-skills@anthropic-agent-skills": false,
-    "mcp-voice-hooks-plugin@mcp-voice-hooks-marketplace": false,
-    "superpowers@superpowers-marketplace": true,
-    "frontend-design@claude-plugins-official": true,
-    "ralph-wiggum@claude-plugins-official": true
-  },
-  "alwaysThinkingEnabled": false,
-  "feedbackSurveyState": {
-    "lastShownTime": 1754028446447
-  }
+  "alwaysThinkingEnabled": false
 }
