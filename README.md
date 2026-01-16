@@ -1,16 +1,15 @@
-# Claude Code Configuration
+# dotclaude
 
-Personal configuration for Claude Code CLI with hooks, commands, agents, and multi-provider profiles.
+Personal Claude Code configuration with hooks, commands, agents, and multi-provider profiles.
 
 ## Quick Start
 
 ```bash
-# Clone and install
-git clone https://github.com/YOUR_USERNAME/claude-code-config.git
-cd claude-code-config
+git clone https://github.com/JNK234/dotclaude.git
+cd dotclaude
 ./install.sh
 
-# Enable profile switching (add to ~/.zshrc)
+# Add to ~/.zshrc or ~/.bashrc:
 source ~/.claude/scripts/profile-switcher.sh
 ```
 
@@ -18,79 +17,79 @@ source ~/.claude/scripts/profile-switcher.sh
 
 ```
 ~/.claude/
-├── settings.json           # Main settings (hooks, plugins, statusline)
+├── settings.json           # Main settings
 ├── CLAUDE.md               # Development guidelines
 ├── statusline-script.sh    # Custom status bar
 ├── hooks/
-│   ├── pre_tool_use/       # Safety guards (run before commands)
-│   ├── post_tool_use/      # Auto-format + linting (run after edits)
+│   ├── pre_tool_use/       # Safety guards
+│   ├── post_tool_use/      # Auto-format + linting
 │   └── notification/       # Audio alerts
-├── commands/               # Slash commands (/plan, /brainstorm, /implement)
-├── agents/                 # Sub-agents (meta-agent, code-quality-analyzer)
-├── profiles/               # Provider profiles (claude, openrouter)
+├── commands/               # Slash commands
+├── agents/                 # Sub-agents
+├── profiles/               # Provider profiles
 └── scripts/                # Shell utilities
 ```
 
-## Features
+## Hooks
 
-### Hooks
+| Hook | Purpose |
+|------|---------|
+| safety_guard.py | Blocks dangerous shell commands |
+| context_validator.py | Validates file paths and operations |
+| auto_format.py | Auto-formats code after edits |
+| linter_check.py | Runs linters and reports errors |
+| voice_notify.py | Audio alerts when input needed |
 
-| Hook | Location | Purpose |
-|------|----------|---------|
-| safety_guard.py | pre_tool_use | Blocks dangerous shell commands |
-| context_validator.py | pre_tool_use | Validates file paths and operations |
-| auto_format.py | post_tool_use | Auto-formats code after edits |
-| linter_check.py | post_tool_use | Runs linters and reports errors |
-| voice_notify.py | notification | Audio alerts when input needed |
-
-### Commands
+## Commands
 
 | Command | Description |
 |---------|-------------|
-| /plan | Create implementation plans from ideas |
+| /plan | Create implementation plans |
 | /brainstorm | Interactive brainstorming with research |
-| /implement | TDD-based implementation from plans |
+| /implement | TDD-based implementation |
+| /create-spec | Interview-based spec creation |
+| /commit-push | Review, commit, and push |
 
-### Agents
+## Agents
 
 | Agent | Description |
 |-------|-------------|
 | meta-agent | Creates new sub-agent configurations |
 | code-quality-analyzer | Identifies code quality issues |
+| codebase-deep-analyzer | Deep codebase analysis |
 
-### Profile Switching
+## Profile Switching
 
 ```bash
 use-claude        # Default Anthropic Claude
 use-openrouter    # OpenRouter (400+ models)
+use-minimax       # MiniMax M2
+use-kimi          # Kimi (Moonshot AI)
+use-glm           # GLM (Zhipu AI)
 claude-profile    # Show current profile
 claude-profiles   # List all profiles
-claude-reset      # Reset to defaults
 ```
 
-## OpenRouter Setup
+## Provider Setup
 
-1. Copy template: `cp ~/.claude/profiles/openrouter.json.template ~/.claude/profiles/openrouter.json`
-2. Add your API key to the file
-3. Run `use-openrouter`
+Each provider needs API key configuration:
 
-## Configuration
+```bash
+# 1. Copy template
+cp ~/.claude/profiles/openrouter.json.template ~/.claude/profiles/openrouter.json
 
-### settings.json
+# 2. Edit and add your API key
+# Replace YOUR_API_KEY_HERE with actual key
 
-Key settings:
-- `hooks`: PreToolUse, PostToolUse, Notification handlers
-- `statusLine`: Custom status bar command
-- `enabledPlugins`: taskmaster, superpowers
-- `permissions`: bypassPermissions mode
+# 3. Switch profile
+use-openrouter
+```
 
-### CLAUDE.md
-
-Development guidelines including:
-- Challenger operating mode (Gate: GO/NO-GO)
-- Code quality standards
-- Commit message guidelines
-- Task management practices
+**Available providers:**
+- `openrouter.json.template` - OpenRouter (claude-sonnet-4.5, claude-opus-4.1, gemini-2.0-flash)
+- `minimax.json.template` - MiniMax M2
+- `kimi.json.template` - Kimi (kimi-k2-thinking)
+- `glm.json.template` - GLM (glm-4.7, glm-4.5-air)
 
 ## Requirements
 
@@ -98,7 +97,3 @@ Development guidelines including:
 - Python 3.x (for hooks)
 - jq (for statusline)
 - Optional: prettier, black, eslint (for formatting)
-
-## License
-
-MIT

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-ABOUTME: Voice notifications for Claude Code using system audio
-ABOUTME: Provides audio alerts when Claude needs user input
+ABOUTME: Batman-themed voice notifications for Claude Code using ElevenLabs Alfred voice
+ABOUTME: Provides Master Wayne with audio updates from the Batcave using pre-generated audio files
 """
 
 import json
@@ -10,6 +10,7 @@ import subprocess
 import platform
 import os
 
+# Path to audio files directory
 AUDIO_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def play_audio(audio_file):
@@ -24,6 +25,7 @@ def play_audio(audio_file):
         if system == "Darwin":  # macOS
             subprocess.run(["afplay", audio_file], check=True)
         elif system == "Linux":
+            # Try multiple audio players
             for player in ["aplay", "mpg123", "ffplay", "paplay"]:
                 try:
                     subprocess.run([player, audio_file], check=True,
@@ -35,24 +37,27 @@ def play_audio(audio_file):
             subprocess.run(["powershell", "-Command",
                           f"(New-Object Media.SoundPlayer '{audio_file}').PlaySync()"])
     except:
+        # Fallback to terminal bell if audio fails
         print("\a")
 
 def main():
     """Main entry point for the hook"""
     try:
+        # Read notification from stdin
         notification = json.load(sys.stdin)
+
         message = notification.get("message", "")
 
-        # Play notification sound for input requests
+        # Use the Alfred voice audio for "needs your input" messages
         if "needs your input" in message.lower() or "waiting" in message.lower():
-            audio_file = os.path.join(AUDIO_DIR, "notify.mp3")
-            if os.path.exists(audio_file):
-                play_audio(audio_file)
-            else:
-                print("\a")  # Terminal bell fallback
+            audio_file = os.path.join(AUDIO_DIR, "master_wayne_notify.mp3")
+            play_audio(audio_file)
         else:
+            # For other messages, just play a simple notification sound
+            # You could generate more audio files for different scenarios
             print("\a")
 
+        # Always allow
         print(json.dumps({"action": "allow"}))
 
     except Exception as e:

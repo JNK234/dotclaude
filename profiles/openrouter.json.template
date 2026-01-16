@@ -3,7 +3,7 @@
   "cleanupPeriodDays": 30,
   "env": {
     "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
-    "ANTHROPIC_AUTH_TOKEN": "YOUR_OPENROUTER_API_KEY_HERE",
+    "ANTHROPIC_AUTH_TOKEN": "YOUR_API_KEY_HERE",
     "ANTHROPIC_API_KEY": "",
     "API_TIMEOUT_MS": "300000",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
@@ -12,7 +12,9 @@
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "anthropic/claude-opus-4.1"
   },
   "permissions": {
-    "allow": ["*"],
+    "allow": [
+      "*"
+    ],
     "deny": [],
     "defaultMode": "bypassPermissions"
   },
@@ -57,6 +59,50 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ~/.claude/hooks/session/session_start.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ~/.claude/hooks/session/pre_compact.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ~/.claude/hooks/session/conversation_log.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/user-prompt-submit.sh"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -65,7 +111,12 @@
   },
   "enabledPlugins": {
     "taskmaster@taskmaster": true,
+    "document-skills@anthropic-agent-skills": true,
+    "mcp-voice-hooks-plugin@mcp-voice-hooks-marketplace": false,
     "superpowers@superpowers-marketplace": true
   },
-  "alwaysThinkingEnabled": false
+  "alwaysThinkingEnabled": false,
+  "feedbackSurveyState": {
+    "lastShownTime": 1754028446447
+  }
 }

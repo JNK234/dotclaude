@@ -2,11 +2,13 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 30,
   "env": {
-    "API_TIMEOUT_MS": "300000",
+    "API_TIMEOUT_MS": "3000000",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
   },
   "permissions": {
-    "allow": ["*"],
+    "allow": [
+      "*"
+    ],
     "deny": [],
     "defaultMode": "bypassPermissions"
   },
@@ -51,6 +53,50 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ~/.claude/hooks/session/session_start.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ~/.claude/hooks/session/pre_compact.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ~/.claude/hooks/session/conversation_log.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/user-prompt-submit.sh"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -59,7 +105,14 @@
   },
   "enabledPlugins": {
     "taskmaster@taskmaster": true,
-    "superpowers@superpowers-marketplace": true
+    "document-skills@anthropic-agent-skills": false,
+    "mcp-voice-hooks-plugin@mcp-voice-hooks-marketplace": false,
+    "superpowers@superpowers-marketplace": true,
+    "frontend-design@claude-plugins-official": true,
+    "ralph-wiggum@claude-plugins-official": true
   },
-  "alwaysThinkingEnabled": false
+  "alwaysThinkingEnabled": false,
+  "feedbackSurveyState": {
+    "lastShownTime": 1754028446447
+  }
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# ABOUTME: Enhanced statusline showing repo, branch, model, time, and username
-# ABOUTME: Displays comprehensive project context in Claude Code status bar
+# ABOUTME: Enhanced statusline with repo, branch, model, time, username, and inspirational quotes
+# ABOUTME: Displays comprehensive project context with motivational messages for developers
 
 # Read Claude Code JSON input
 input=$(cat)
@@ -26,10 +26,41 @@ current_time=$(date '+%H:%M')
 # Get username
 username=$(whoami)
 
-# Clean statusline with essential elements
-printf "%s | %s | %s | %s | %s" \
+# Array of inspirational quotes for building/coding
+quotes=(
+    "Ship it! 🚀"
+    "Code is poetry 📝"
+    "Build something amazing ⚡"
+    "Keep pushing forward 💪"
+    "Debug today, deploy tomorrow 🎯"
+    "Every bug is a lesson 🐛"
+    "Commit to excellence ✨"
+    "Refactor with purpose 🔧"
+    "Test, then test again ✅"
+    "Innovation starts here 💡"
+    "Clean code, clear mind 🧘"
+    "Progress over perfection 📈"
+    "Deploy with confidence 🎪"
+    "Solve problems, create value 💎"
+    "Code with passion 🔥"
+    "Build the future 🏗️"
+    "One line at a time ⌨️"
+    "Transform ideas into reality 🌟"
+    "Embrace the challenge 🎮"
+    "Create, iterate, improve 🔄"
+)
+
+# Select a random quote
+# Use the current second as a seed for some variety that changes over time
+second=$(date '+%S')
+quote_index=$((second % ${#quotes[@]}))
+random_quote="${quotes[$quote_index]}"
+
+# Clean statusline with all requested elements
+printf "%s | %s | %s | %s | %s | %s" \
     "$project_name" \
     "$git_branch" \
     "$model_info" \
     "$current_time" \
-    "$username"
+    "$username" \
+    "$random_quote"
