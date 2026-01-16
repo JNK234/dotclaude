@@ -1,19 +1,27 @@
 #!/bin/bash
 
 # ABOUTME: Claude Code Configuration Installer
-# ABOUTME: Installs hooks, commands, agents, and settings to ~/.claude
+# ABOUTME: Installs hooks, commands, agents, settings, and configures shell
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
+SHELL_CONFIG=""
+
+# Detect shell config file
+if [ -f "$HOME/.zshrc" ]; then
+    SHELL_CONFIG="$HOME/.zshrc"
+elif [ -f "$HOME/.bashrc" ]; then
+    SHELL_CONFIG="$HOME/.bashrc"
+fi
 
 echo "Installing Claude Code Configuration..."
 echo "========================================"
 
 # Create directories
 echo "Creating directory structure..."
-mkdir -p "$CLAUDE_DIR"/{hooks/{pre_tool_use,post_tool_use,notification,session},commands,agents,profiles,scripts}
+mkdir -p "$CLAUDE_DIR"/{hooks/{pre_tool_use,post_tool_use,notification},commands,agents,profiles,scripts}
 
 # Copy settings
 if [ ! -f "$CLAUDE_DIR/settings.json" ]; then
@@ -63,20 +71,44 @@ echo "Installing scripts..."
 cp "$SCRIPT_DIR/scripts/"*.sh "$CLAUDE_DIR/scripts/" 2>/dev/null || true
 chmod +x "$CLAUDE_DIR/scripts/"*.sh 2>/dev/null || true
 
+# Add profile switcher to shell config
+PROFILE_SOURCE='source ~/.claude/scripts/profile-switcher.sh'
+
+if [ -n "$SHELL_CONFIG" ]; then
+    if ! grep -q "profile-switcher.sh" "$SHELL_CONFIG" 2>/dev/null; then
+        echo ""
+        echo "Adding profile switcher to $SHELL_CONFIG..."
+        echo "" >> "$SHELL_CONFIG"
+        echo "# Claude Code Profile Switcher" >> "$SHELL_CONFIG"
+        echo "$PROFILE_SOURCE" >> "$SHELL_CONFIG"
+        echo "Added to $SHELL_CONFIG"
+    else
+        echo "Profile switcher already in $SHELL_CONFIG"
+    fi
+else
+    echo ""
+    echo "Could not detect shell config. Manually add to your shell config:"
+    echo "  $PROFILE_SOURCE"
+fi
+
 echo ""
+echo "========================================"
 echo "Installation complete!"
+echo "========================================"
 echo ""
-echo "To enable profile switching, add to your ~/.zshrc or ~/.bashrc:"
+echo "Restart your terminal or run:"
+echo "  source $SHELL_CONFIG"
 echo ""
-echo "  source ~/.claude/scripts/profile-switcher.sh"
-echo ""
-echo "Available commands after sourcing:"
-echo "  use-claude       - Switch to Anthropic Claude"
-echo "  use-openrouter   - Switch to OpenRouter (setup API key first)"
+echo "Available commands:"
+echo "  use-claude       - Anthropic Claude (default)"
+echo "  use-openrouter   - OpenRouter (400+ models)"
+echo "  use-minimax      - MiniMax M2"
+echo "  use-kimi         - Kimi (Moonshot AI)"
+echo "  use-glm          - GLM (Zhipu AI)"
 echo "  claude-profile   - Show current profile"
-echo "  claude-profiles  - List available profiles"
+echo "  claude-profiles  - List all profiles"
 echo ""
-echo "For OpenRouter setup:"
-echo "  1. Copy ~/.claude/profiles/openrouter.json.template to openrouter.json"
-echo "  2. Replace YOUR_OPENROUTER_API_KEY_HERE with your API key"
+echo "To setup a provider:"
+echo "  cp ~/.claude/profiles/openrouter.json.template ~/.claude/profiles/openrouter.json"
+echo "  # Edit and add your API key, then: use-openrouter"
 echo ""
