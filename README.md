@@ -23,7 +23,8 @@ The installer automatically adds profile switching to your shell config.
 ├── hooks/
 │   ├── pre_tool_use/       # Safety guards
 │   ├── post_tool_use/      # Auto-format + linting
-│   └── notification/       # Audio alerts
+│   ├── notification/       # Audio alerts
+│   └── session/            # Session lifecycle
 ├── commands/               # Slash commands
 ├── agents/                 # Sub-agents
 ├── profiles/               # Provider profiles
@@ -32,13 +33,14 @@ The installer automatically adds profile switching to your shell config.
 
 ## Hooks
 
-| Hook | Purpose |
-|------|---------|
-| `safety_guard.py` | Blocks dangerous shell commands (rm -rf /, fork bombs, etc.) |
-| `context_validator.py` | Validates file paths, blocks system file edits |
-| `auto_format.py` | Auto-formats code after edits (prettier, black, gofmt) |
-| `linter_check.py` | Runs linters and reports errors (eslint, flake8, mypy) |
-| `voice_notify.py` | Audio alerts when Claude needs input |
+| Hook | Event | Purpose |
+|------|-------|---------|
+| `safety_guard.py` | PreToolUse | Blocks dangerous shell commands (rm -rf /, fork bombs, etc.) |
+| `context_validator.py` | PreToolUse | Validates file paths, blocks system file edits |
+| `auto_format.py` | PostToolUse | Auto-formats code after edits (prettier, black, gofmt) |
+| `linter_check.py` | PostToolUse | Runs linters and reports errors (eslint, flake8, mypy) |
+| `voice_notify.py` | Notification | Audio alerts when Claude needs input |
+| `session_start.py` | SessionStart | Loads project context (git branch, recent commits, project type) |
 
 ## Commands
 

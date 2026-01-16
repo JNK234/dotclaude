@@ -53,6 +53,18 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ~/.claude/hooks/session/session_start.py",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   },
   "statusLine": {

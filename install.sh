@@ -28,7 +28,7 @@ echo ""
 
 # Create directories
 echo "Creating directory structure..."
-mkdir -p "$CLAUDE_DIR"/{hooks/{pre_tool_use,post_tool_use,notification},commands,agents,profiles,scripts}
+mkdir -p "$CLAUDE_DIR"/{hooks/{pre_tool_use,post_tool_use,notification,session},commands,agents,profiles,scripts}
 
 # Copy settings
 if [ ! -f "$CLAUDE_DIR/settings.json" ]; then
@@ -51,6 +51,7 @@ echo "Installing hooks..."
 cp "$SCRIPT_DIR/hooks/pre_tool_use/"*.py "$CLAUDE_DIR/hooks/pre_tool_use/" 2>/dev/null || true
 cp "$SCRIPT_DIR/hooks/post_tool_use/"*.py "$CLAUDE_DIR/hooks/post_tool_use/" 2>/dev/null || true
 cp "$SCRIPT_DIR/hooks/notification/"*.py "$CLAUDE_DIR/hooks/notification/" 2>/dev/null || true
+cp "$SCRIPT_DIR/hooks/session/"*.py "$CLAUDE_DIR/hooks/session/" 2>/dev/null || true
 
 # Customize voice notification with user's name
 if [ -f "$CLAUDE_DIR/hooks/notification/voice_notify.py" ]; then
