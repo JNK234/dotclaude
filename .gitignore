@@ -1,0 +1,20 @@
+# Secrets - never commit
+*.local.json
+**/secrets/
+**/*.env
+
+# Profile with credentials
+profiles/openrouter.json
+profiles/minimax.json
+profiles/glm.json
+profiles/kimi.json
+
+# Cache and temp files
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+
+# Audio files (can be regenerated)
+hooks/notification/*.mp3
+hooks/notification/*.wav
