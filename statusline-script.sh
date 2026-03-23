@@ -1,66 +1,94 @@
 #!/bin/bash
 
-# ABOUTME: Enhanced statusline with repo, branch, model, time, username, and inspirational quotes
-# ABOUTME: Displays comprehensive project context with motivational messages for developers
+# ABOUTME: Status line showing context, model, branch, tokens, cost, duration.
+# ABOUTME: Generic across projects. Uses Python for JSON parsing.
 
-# Read Claude Code JSON input
-input=$(cat)
+python3 -c "
+import sys, json, subprocess
 
-# Extract essential data from JSON
-project_name=$(basename "$(echo "$input" | jq -r '.workspace.project_dir // .workspace.current_dir // .cwd')")
-model_info=$(echo "$input" | jq -r '.model.display_name // .model.id // "Unknown"')
+try:
+    data = json.load(sys.stdin)
+except:
+    print('? | no data')
+    sys.exit(0)
 
-# Git branch information
-if git rev-parse --git-dir > /dev/null 2>&1; then
-    git_branch=$(git --no-optional-locks branch --show-current 2>/dev/null || echo "detached")
-    if [ -z "$git_branch" ]; then
-        git_branch="detached"
-    fi
-else
-    git_branch="no-git"
-fi
+# Context window
+ctx = data.get('context_window', {})
+ctx_pct = int(ctx.get('used_percentage') or 0)
+ctx_size = ctx.get('context_window_size') or 0
 
-# Get current time
-current_time=$(date '+%H:%M')
+if ctx_size >= 1_000_000:
+    ctx_label = f'{ctx_size // 1_000_000}M'
+elif ctx_size >= 1000:
+    ctx_label = f'{ctx_size // 1000}k'
+else:
+    ctx_label = str(ctx_size)
 
-# Get username
-username=$(whoami)
+# Visual bar (10 chars)
+filled = ctx_pct // 10
+bar = '█' * filled + '░' * (10 - filled)
 
-# Array of inspirational quotes for building/coding
-quotes=(
-    "Ship it! 🚀"
-    "Code is poetry 📝"
-    "Build something amazing ⚡"
-    "Keep pushing forward 💪"
-    "Debug today, deploy tomorrow 🎯"
-    "Every bug is a lesson 🐛"
-    "Commit to excellence ✨"
-    "Refactor with purpose 🔧"
-    "Test, then test again ✅"
-    "Innovation starts here 💡"
-    "Clean code, clear mind 🧘"
-    "Progress over perfection 📈"
-    "Deploy with confidence 🎪"
-    "Solve problems, create value 💎"
-    "Code with passion 🔥"
-    "Build the future 🏗️"
-    "One line at a time ⌨️"
-    "Transform ideas into reality 🌟"
-    "Embrace the challenge 🎮"
-    "Create, iterate, improve 🔄"
-)
+# Warning icon
+if ctx_pct >= 80:
+    icon = '🔴'
+elif ctx_pct >= 50:
+    icon = '🟡'
+else:
+    icon = '🟢'
 
-# Select a random quote
-# Use the current second as a seed for some variety that changes over time
-second=$(date '+%S')
-quote_index=$((second % ${#quotes[@]}))
-random_quote="${quotes[$quote_index]}"
+# Model
+model = data.get('model', {}).get('display_name') or data.get('model', {}).get('id') or '?'
 
-# Clean statusline with all requested elements
-printf "%s | %s | %s | %s | %s | %s" \
-    "$project_name" \
-    "$git_branch" \
-    "$model_info" \
-    "$current_time" \
-    "$username" \
-    "$random_quote"
+# Git branch
+project_dir = data.get('workspace', {}).get('project_dir') or data.get('cwd') or '.'
+try:
+    branch = subprocess.check_output(
+        ['git', '--no-optional-locks', 'branch', '--show-current'],
+        stderr=subprocess.DEVNULL, timeout=2, cwd=project_dir
+    ).decode().strip() or 'detached'
+except:
+    branch = '?'
+
+# Token flow
+def fmt_tok(n):
+    if n >= 1_000_000:
+        return f'{n/1_000_000:.1f}M'
+    elif n >= 1000:
+        return f'{n/1000:.1f}k'
+    return str(n)
+
+in_tok = ctx.get('total_input_tokens') or 0
+out_tok = ctx.get('total_output_tokens') or 0
+
+# Cost (compact)
+cost = data.get('cost', {})
+usd = cost.get('total_cost_usd') or 0
+if usd >= 100:
+    cost_fmt = f'\${usd:.0f}'
+elif usd >= 10:
+    cost_fmt = f'\${usd:.1f}'
+else:
+    cost_fmt = f'\${usd:.2f}'
+
+# Session duration
+ms = cost.get('total_duration_ms') or 0
+secs = ms // 1000
+h, m = secs // 3600, (secs % 3600) // 60
+duration = f'{h}h{m}m' if h > 0 else f'{m}m'
+
+# Lines changed
+added = cost.get('total_lines_added') or 0
+removed = cost.get('total_lines_removed') or 0
+
+parts = [
+    f'{icon} {bar} {ctx_pct}% of {ctx_label}',
+    branch,
+    model,
+    f'↑{fmt_tok(in_tok)} ↓{fmt_tok(out_tok)}',
+    f'+{added} -{removed}',
+    cost_fmt,
+    duration,
+]
+
+print(' | '.join(parts))
+"
