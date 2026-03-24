@@ -1,0 +1,5 @@
+#!/bin/bash
+# Global Claude Parallel Wrapper
+# Usage: claude-parallel <count>
+
+~/.claude/scripts/parallel.sh "$@"

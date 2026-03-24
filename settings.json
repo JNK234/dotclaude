@@ -56,12 +56,33 @@
     ],
     "SessionStart": [
       {
-        "matcher": "startup|resume",
+        "matcher": "startup|resume|clear",
         "hooks": [
           {
             "type": "command",
-            "command": "python ~/.claude/hooks/session/session_start.py",
-            "timeout": 10
+            "command": "python ~/.claude/hooks/session/session_start.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ~/.claude/hooks/session/pre_compact.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ~/.claude/hooks/session/conversation_log.py"
           }
         ]
       }
@@ -71,5 +92,26 @@
     "type": "command",
     "command": "bash ~/.claude/statusline-script.sh"
   },
-  "alwaysThinkingEnabled": false
+  "enabledPlugins": {
+    "taskmaster@taskmaster": false,
+    "document-skills@anthropic-agent-skills": true,
+    "mcp-voice-hooks-plugin@mcp-voice-hooks-marketplace": false,
+    "superpowers@superpowers-marketplace": false,
+    "everything-claude-code@everything-claude-code": false,
+    "frontend-design@claude-plugins-official": false,
+    "superpowers@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "code-review@claude-code-plugins": true
+  },
+  "extraKnownMarketplaces": {
+    "everything-claude-code": {
+      "source": {
+        "source": "github",
+        "repo": "affaan-m/everything-claude-code"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": false,
+  "voiceEnabled": true,
+  "skipDangerousModePermissionPrompt": true
 }

@@ -1,0 +1,5 @@
+#!/bin/bash
+# Global Claude Worktree Wrapper
+# Usage: claude-worktree <task-id>
+
+~/.claude/scripts/worktree.sh "$@"
