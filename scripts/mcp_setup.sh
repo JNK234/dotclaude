@@ -1,6 +1,6 @@
 #!/bin/bash
-# ABOUTME: MCP (Model Context Protocol) server setup for Claude Code
-# ABOUTME: Interactive setup script with essential, optional, database, and cloud server categories
+# ABOUTME: MCP (Model Context Protocol) server setup for Claude Code and Claude Desktop
+# ABOUTME: Configures user-scope MCPs for Claude Code and writes Desktop config for Claude Desktop
 
 set -e
 
@@ -15,27 +15,24 @@ NC='\033[0m'
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
+DESKTOP_CONFIG="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
 
-echo -e "${BLUE}Claude Code MCP Server Setup${NC}"
+echo -e "${BLUE}Claude MCP Server Setup${NC}"
 echo "================================"
+echo ""
+echo -e "${GRAY}Claude Code MCPs  → user-scope in ~/.claude.json${NC}"
+echo -e "${GRAY}Claude Desktop MCPs → ~/Library/Application Support/Claude/claude_desktop_config.json${NC}"
+echo ""
 
-# Function to check if a command exists
 command_exists() {
     command -v "$1" &> /dev/null
 }
 
-# Function to check prerequisites
 check_prerequisites() {
     echo -e "${YELLOW}Checking prerequisites...${NC}"
 
     if ! command_exists node; then
         echo -e "${RED}Node.js not found. Please install Node.js first.${NC}"
-        echo "Visit: https://nodejs.org/"
-        exit 1
-    fi
-
-    if ! command_exists npm; then
-        echo -e "${RED}npm not found. Please install npm first.${NC}"
         exit 1
     fi
 
@@ -46,7 +43,6 @@ check_prerequisites() {
 
     if ! command_exists claude; then
         echo -e "${RED}Claude Code not found. Please install Claude Code first.${NC}"
-        echo "Visit: https://claude.ai/code"
         exit 1
     fi
 
@@ -54,193 +50,303 @@ check_prerequisites() {
     echo ""
 }
 
-# Function to setup essential MCP servers
-setup_essential_servers() {
-    echo -e "${YELLOW}Setting up essential MCP servers...${NC}"
-
-    echo -e "${GRAY}Installing Filesystem MCP...${NC}"
-    claude mcp add -s user filesystem -- npx -y @modelcontextprotocol/server-filesystem "$HOME/Developer" || {
-        echo -e "${YELLOW}Filesystem MCP failed, trying with current directory...${NC}"
-        claude mcp add -s user filesystem -- npx -y @modelcontextprotocol/server-filesystem "$(pwd)"
-    }
-
-    echo -e "${GRAY}Installing Sequential Thinking MCP...${NC}"
-    claude mcp add -s user sequential -- npx -y @modelcontextprotocol/server-sequential-thinking
-
-    echo -e "${GRAY}Installing Playwright MCP...${NC}"
-    claude mcp add -s user playwright -- npx -y @executeautomation/playwright-mcp-server
-
-    echo -e "${GRAY}Installing Context7 MCP...${NC}"
-    claude mcp add -s user context7 -- npx -y @upstash/context7-mcp@latest
-
-    echo -e "${GRAY}Installing GitHub MCP...${NC}"
-    claude mcp add -s user github -- npx -y @modelcontextprotocol/server-github
-
-    echo -e "${GRAY}Installing Memory MCP...${NC}"
-    claude mcp add -s user memory -- npx -y @modelcontextprotocol/server-memory
-
-    local zen_path="/Users/$(whoami)/Developer/MCPs/zen-mcp-server"
-    if [[ -d "$zen_path" && -f "$zen_path/.zen_venv/bin/python" ]]; then
-        echo -e "${GRAY}Installing Zen MCP (advanced AI collaboration)...${NC}"
-        claude mcp add -s user zen -- "$zen_path/.zen_venv/bin/python" "$zen_path/server.py"
-        echo -e "${GREEN}Zen MCP configured${NC}"
+# Helper: add a server to user-scope, skip if already exists
+add_user_server() {
+    local name="$1"
+    shift
+    if claude mcp get "$name" -s user &>/dev/null 2>&1; then
+        echo -e "${GRAY}  $name already configured - skipping${NC}"
     else
-        echo -e "${YELLOW}Zen MCP not found at $zen_path - skipping${NC}"
-        echo -e "${GRAY}To install Zen: git clone https://github.com/BeehiveInnovations/zen-mcp-server.git $zen_path${NC}"
+        claude mcp add -s user "$name" "$@" 2>&1 && \
+            echo -e "${GREEN}  $name added${NC}" || \
+            echo -e "${YELLOW}  $name failed (non-fatal)${NC}"
+    fi
+}
+
+# ── Claude Code: Essential servers ──────────────────────────────────────────
+setup_cc_essential() {
+    echo -e "${YELLOW}[Claude Code] Setting up essential servers (user-scope)...${NC}"
+
+    add_user_server filesystem -- npx -y @modelcontextprotocol/server-filesystem "$HOME/Developer"
+    add_user_server sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
+    add_user_server context7 -- npx -y @upstash/context7-mcp@latest
+    add_user_server memory -- npx -y @modelcontextprotocol/server-memory
+
+    local zen_path="$HOME/Developer/MCPs/zen-mcp-server"
+    if [[ -d "$zen_path" && -f "$zen_path/.zen_venv/bin/python" ]]; then
+        add_user_server zen -- "$zen_path/.zen_venv/bin/python" "$zen_path/server.py"
+    else
+        echo -e "${GRAY}  zen not found at $zen_path - skipping${NC}"
     fi
 
-    echo -e "${GREEN}Essential MCP servers configured${NC}"
+    echo -e "${GREEN}Essential servers configured${NC}"
+    echo ""
 }
 
-# Function to setup optional MCP servers
-setup_optional_servers() {
-    echo -e "${YELLOW}Setting up optional MCP servers...${NC}"
+# ── Claude Code: Productivity servers ───────────────────────────────────────
+setup_cc_productivity() {
+    echo -e "${YELLOW}[Claude Code] Setting up productivity servers (user-scope)...${NC}"
 
-    echo -e "${GRAY}Installing Memory MCP...${NC}"
-    claude mcp add -s user memory -- npx -y @modelcontextprotocol/server-memory || {
-        echo -e "${YELLOW}Memory MCP installation failed (optional)${NC}"
-    }
+    add_user_server obsidian -- npx -y mcp-obsidian "$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Brain"
+    add_user_server task-master-ai -- npx -y task-master-ai
+    add_user_server chrome-devtools -- npx chrome-devtools-mcp@latest
 
-    echo -e "${GRAY}Installing Puppeteer MCP...${NC}"
-    claude mcp add -s user puppeteer -- npx -y @modelcontextprotocol/server-puppeteer || {
-        echo -e "${YELLOW}Puppeteer MCP installation failed (optional)${NC}"
-    }
+    if command_exists uvx; then
+        add_user_server voicemode -- uvx --refresh voice-mode
+    else
+        echo -e "${GRAY}  voicemode requires uvx - skipping${NC}"
+    fi
 
-    echo -e "${GREEN}Optional MCP servers setup complete${NC}"
+    echo -e "${GREEN}Productivity servers configured${NC}"
+    echo ""
 }
 
-# Function to setup database MCP servers
-setup_database_servers() {
-    echo -e "${YELLOW}Setting up database MCP servers...${NC}"
+# ── Claude Code: Cloud servers ──────────────────────────────────────────────
+setup_cc_cloud() {
+    echo -e "${YELLOW}[Claude Code] Setting up cloud servers (user-scope)...${NC}"
+
+    add_user_server gcloud-mcp -- npx -y @google-cloud/gcloud-mcp
+    add_user_server cloud-run-mcp -- npx -y @google-cloud/cloud-run-mcp
+
+    if [ -n "${BRAVE_API_KEY:-}" ]; then
+        claude mcp add -s user -e BRAVE_API_KEY="$BRAVE_API_KEY" brave-search -- npx -y @modelcontextprotocol/server-brave-search 2>/dev/null && \
+            echo -e "${GREEN}  brave-search added${NC}" || echo -e "${GRAY}  brave-search already exists${NC}"
+    else
+        echo -e "${GRAY}  brave-search requires BRAVE_API_KEY - skipping${NC}"
+    fi
+
+    echo -e "${GREEN}Cloud servers configured${NC}"
+    echo ""
+}
+
+# ── Claude Code: API-key servers ────────────────────────────────────────────
+setup_cc_apikey() {
+    echo -e "${YELLOW}[Claude Code] Setting up API-key servers (user-scope)...${NC}"
+
+    if [ -n "${ELEVENLABS_API_KEY:-}" ]; then
+        claude mcp add -s user -e ELEVENLABS_API_KEY="$ELEVENLABS_API_KEY" elevenlabs -- npx -y @angelogiacco/elevenlabs-mcp-server 2>/dev/null && \
+            echo -e "${GREEN}  elevenlabs added${NC}" || echo -e "${GRAY}  elevenlabs already exists${NC}"
+    else
+        echo -e "${GRAY}  elevenlabs requires ELEVENLABS_API_KEY - skipping${NC}"
+    fi
+
+    if [ -n "${PERPLEXITY_API_KEY:-}" ]; then
+        claude mcp add -s user -e PERPLEXITY_API_KEY="$PERPLEXITY_API_KEY" perplexity -- node "$HOME/Documents/Cline/MCP/perplexity-mcp/build/index.js" 2>/dev/null && \
+            echo -e "${GREEN}  perplexity added${NC}" || echo -e "${GRAY}  perplexity already exists${NC}"
+    else
+        echo -e "${GRAY}  perplexity requires PERPLEXITY_API_KEY - skipping${NC}"
+    fi
+
+    add_user_server firecrawl -- npx -y firecrawl-mcp
+
+    echo -e "${GREEN}API-key servers configured${NC}"
+    echo ""
+}
+
+# ── Claude Code: Database servers ───────────────────────────────────────────
+setup_cc_database() {
+    echo -e "${YELLOW}[Claude Code] Setting up database servers (user-scope)...${NC}"
 
     if [ -n "${DATABASE_URL:-}" ] || [ -n "${POSTGRES_URL:-}" ]; then
-        echo -e "${GRAY}Installing PostgreSQL MCP...${NC}"
         local db_url="${DATABASE_URL:-$POSTGRES_URL}"
-        claude mcp add -s user postgres -e DATABASE_URL="$db_url" -- npx -y @modelcontextprotocol/server-postgres
-        echo -e "${GREEN}PostgreSQL MCP configured${NC}"
+        claude mcp add -s user -e DATABASE_URL="$db_url" postgres -- npx -y @modelcontextprotocol/server-postgres 2>/dev/null && \
+            echo -e "${GREEN}  postgres added${NC}" || echo -e "${GRAY}  postgres already exists${NC}"
     else
-        echo -e "${GRAY}Skipping PostgreSQL MCP (no DATABASE_URL found)${NC}"
-        echo "To add later: export DATABASE_URL='your-connection-string'"
+        echo -e "${GRAY}  postgres requires DATABASE_URL - skipping${NC}"
     fi
 
-    echo -e "${GRAY}Installing SQLite MCP...${NC}"
-    claude mcp add -s user sqlite -- npx -y @modelcontextprotocol/server-sqlite || {
-        echo -e "${YELLOW}SQLite MCP installation failed (optional)${NC}"
+    add_user_server sqlite -- npx -y @modelcontextprotocol/server-sqlite
+
+    echo -e "${GREEN}Database servers configured${NC}"
+    echo ""
+}
+
+# ── Claude Desktop: Write config ────────────────────────────────────────────
+setup_desktop() {
+    echo -e "${YELLOW}[Claude Desktop] Setting up Desktop MCP config...${NC}"
+
+    if [[ ! -f "$DESKTOP_CONFIG" ]]; then
+        echo -e "${RED}Claude Desktop config not found at $DESKTOP_CONFIG${NC}"
+        echo -e "${GRAY}Install Claude Desktop first, then re-run this.${NC}"
+        return 1
+    fi
+
+    local zen_path="$HOME/Developer/MCPs/zen-mcp-server"
+    local obsidian_vault="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Brain"
+
+    # Build the mcpServers object, preserving existing preferences
+    local tmp_file
+    tmp_file=$(mktemp)
+
+    python3 -c "
+import json, sys
+
+config_path = '$DESKTOP_CONFIG'
+with open(config_path) as f:
+    config = json.load(f)
+
+servers = {
+    'zen': {
+        'command': '$zen_path/.zen_venv/bin/python',
+        'args': ['$zen_path/server.py']
+    },
+    'obsidian': {
+        'command': 'npx',
+        'args': ['-y', 'mcp-obsidian', '$obsidian_vault']
+    },
+    'sequential-thinking': {
+        'command': 'npx',
+        'args': ['-y', '@modelcontextprotocol/server-sequential-thinking']
+    },
+    'cloud-run-mcp': {
+        'command': 'npx',
+        'args': ['-y', '@google-cloud/cloud-run-mcp']
+    },
+    'context7': {
+        'command': 'npx',
+        'args': ['-y', '@upstash/context7-mcp@latest']
+    },
+    'filesystem': {
+        'command': 'npx',
+        'args': ['-y', '@modelcontextprotocol/server-filesystem', '$HOME/Developer']
+    },
+    'puppeteer': {
+        'command': 'npx',
+        'args': ['-y', '@modelcontextprotocol/server-puppeteer']
     }
 }
 
-# Function to setup cloud service MCP servers
-setup_cloud_services() {
-    echo -e "${YELLOW}Setting up cloud service MCP servers...${NC}"
+# Merge: keep existing servers not in our list (e.g. quibo, perplexity with keys)
+existing = config.get('mcpServers', {})
+for name, srv in existing.items():
+    if name not in servers:
+        servers[name] = srv
 
-    if [ -n "${GITHUB_TOKEN:-}" ]; then
-        echo -e "${GRAY}Installing GitHub MCP with authentication...${NC}"
-        claude mcp add -s user github -e GITHUB_TOKEN="$GITHUB_TOKEN" -- npx -y @modelcontextprotocol/server-github
-        echo -e "${GREEN}GitHub MCP configured with authentication${NC}"
-    else
-        echo -e "${GRAY}Installing GitHub MCP (limited functionality without token)...${NC}"
-        claude mcp add -s user github -- npx -y @modelcontextprotocol/server-github
-        echo -e "${YELLOW}GitHub MCP installed without token - limited functionality${NC}"
-    fi
+config['mcpServers'] = servers
 
-    if [ -n "${GOOGLE_DRIVE_CREDENTIALS:-}" ]; then
-        echo -e "${GRAY}Installing Google Drive MCP...${NC}"
-        claude mcp add -s user gdrive -e GOOGLE_DRIVE_CREDENTIALS="$GOOGLE_DRIVE_CREDENTIALS" -- npx -y @modelcontextprotocol/server-gdrive || {
-            echo -e "${YELLOW}Google Drive MCP installation failed${NC}"
-        }
+with open('$tmp_file', 'w') as f:
+    json.dump(config, f, indent=2)
+    f.write('\n')
+" 2>&1
+
+    if [[ -f "$tmp_file" && -s "$tmp_file" ]]; then
+        cp "$tmp_file" "$DESKTOP_CONFIG"
+        rm "$tmp_file"
+        echo -e "${GREEN}Desktop config updated at $DESKTOP_CONFIG${NC}"
     else
-        echo -e "${GRAY}Skipping Google Drive MCP (no credentials found)${NC}"
+        echo -e "${RED}Failed to generate Desktop config${NC}"
+        rm -f "$tmp_file"
+        return 1
     fi
+    echo ""
 }
 
-# Function to test MCP servers
-test_mcp_servers() {
-    echo -e "${YELLOW}Testing MCP server connections...${NC}"
+# ── Test ────────────────────────────────────────────────────────────────────
+test_servers() {
+    echo -e "${YELLOW}Testing Claude Code MCP server connections...${NC}"
     echo ""
     claude mcp list
     echo ""
-    echo -e "${GREEN}MCP server test complete${NC}"
+    echo -e "${GREEN}Test complete${NC}"
 }
 
-# Function to show MCP server status and usage
-show_mcp_info() {
+# ── Info ────────────────────────────────────────────────────────────────────
+show_info() {
     echo ""
-    echo -e "${BLUE}MCP Servers Information${NC}"
+    echo -e "${BLUE}MCP Architecture${NC}"
     echo "================================"
     echo ""
-    echo -e "${YELLOW}Installed Servers:${NC}"
-    echo "  filesystem - File operations and directory management"
-    echo "  sequential - Advanced reasoning and problem-solving"
-    echo "  playwright - Web automation and browser testing"
-    echo "  context7 - Documentation lookup and context retrieval"
-    echo "  github - GitHub repository management and operations"
-    echo "  memory - Persistent memory across sessions"
-    echo "  zen - Advanced AI collaboration with multiple models"
+    echo -e "${YELLOW}Config locations:${NC}"
+    echo "  Claude Code (user-scope):  ~/.claude.json"
+    echo "  Claude Code (per-project): <project>/.mcp.json"
+    echo "  Claude Desktop:            ~/Library/Application Support/Claude/claude_desktop_config.json"
     echo ""
-    echo -e "${YELLOW}Management Commands:${NC}"
-    echo "  claude mcp list - Show all servers"
-    echo "  claude mcp get <name> - Get server details"
-    echo "  claude mcp remove <name> - Remove a server"
+    echo -e "${YELLOW}Scope precedence (Claude Code):${NC}"
+    echo "  local (per-project private) > project (.mcp.json) > user (global)"
+    echo ""
+    echo -e "${YELLOW}Management commands:${NC}"
+    echo "  claude mcp list                    Show all active servers"
+    echo "  claude mcp get <name>              Server details and scope"
+    echo "  claude mcp add --scope user ...    Add server to user-scope"
+    echo "  claude mcp remove <name> -s user   Remove user-scope server"
+    echo ""
+    echo -e "${RED}Avoid:${NC}"
+    echo "  ~/.mcp.json as global config (it's project-scope for home dir)"
+    echo "  ~/.claude/claude_desktop_config.json (not read by any system)"
     echo ""
 }
 
-# Interactive menu
+# ── Menu ────────────────────────────────────────────────────────────────────
 show_menu() {
     echo ""
     echo -e "${BLUE}MCP Server Setup Options:${NC}"
-    echo "1) Quick Setup - Essential servers only (recommended)"
-    echo "2) Full Setup - All available servers"
-    echo "3) Essential Servers - Core functionality"
-    echo "4) Optional Servers - Additional features"
-    echo "5) Database Servers - PostgreSQL, SQLite"
-    echo "6) Cloud Services - GitHub, Google Drive"
-    echo "7) Test Connections - Verify server health"
-    echo "8) Show Information - Usage and management"
-    echo "9) Exit"
+    echo "1) Quick Setup - Essential CC servers only (recommended)"
+    echo "2) Full Setup - All CC + Desktop servers"
+    echo "3) Claude Code: Essential servers"
+    echo "4) Claude Code: Productivity servers"
+    echo "5) Claude Code: Cloud servers"
+    echo "6) Claude Code: API-key servers"
+    echo "7) Claude Code: Database servers"
+    echo "8) Claude Desktop: Setup config"
+    echo "9) Test Connections"
+    echo "a) Show Architecture Info"
+    echo "q) Exit"
     echo ""
 }
 
-# Main execution
+# ── Main ────────────────────────────────────────────────────────────────────
 main() {
     check_prerequisites
 
     case "${1:-}" in
         "--quick"|"-q")
-            setup_essential_servers
-            test_mcp_servers
-            show_mcp_info
+            setup_cc_essential
+            test_servers
+            show_info
             exit 0
             ;;
         "--full"|"-f")
-            setup_essential_servers
-            setup_optional_servers
-            setup_database_servers
-            setup_cloud_services
-            test_mcp_servers
-            show_mcp_info
+            setup_cc_essential
+            setup_cc_productivity
+            setup_cc_cloud
+            setup_cc_apikey
+            setup_cc_database
+            setup_desktop
+            test_servers
+            show_info
             exit 0
             ;;
         "--test"|"-t")
-            test_mcp_servers
+            test_servers
+            exit 0
+            ;;
+        "--desktop"|"-d")
+            setup_desktop
+            exit 0
+            ;;
+        "--info"|"-i")
+            show_info
             exit 0
             ;;
     esac
 
     while true; do
         show_menu
-        read -p "Select option (1-9): " choice
+        read -p "Select option: " choice
 
         case $choice in
-            1) setup_essential_servers; test_mcp_servers; show_mcp_info ;;
-            2) setup_essential_servers; setup_optional_servers; setup_database_servers; setup_cloud_services; test_mcp_servers; show_mcp_info ;;
-            3) setup_essential_servers ;;
-            4) setup_optional_servers ;;
-            5) setup_database_servers ;;
-            6) setup_cloud_services ;;
-            7) test_mcp_servers ;;
-            8) show_mcp_info ;;
-            9) echo -e "${BLUE}Setup complete!${NC}"; exit 0 ;;
-            *) echo -e "${RED}Invalid option. Please select 1-9.${NC}" ;;
+            1) setup_cc_essential; test_servers; show_info ;;
+            2) setup_cc_essential; setup_cc_productivity; setup_cc_cloud; setup_cc_apikey; setup_cc_database; setup_desktop; test_servers; show_info ;;
+            3) setup_cc_essential ;;
+            4) setup_cc_productivity ;;
+            5) setup_cc_cloud ;;
+            6) setup_cc_apikey ;;
+            7) setup_cc_database ;;
+            8) setup_desktop ;;
+            9) test_servers ;;
+            a) show_info ;;
+            q) echo -e "${BLUE}Setup complete!${NC}"; exit 0 ;;
+            *) echo -e "${RED}Invalid option.${NC}" ;;
         esac
 
         echo ""
